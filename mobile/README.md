@@ -23,8 +23,8 @@ A professional HTML+JS mobile-friendly Daily Time Record (DTR) app that stores e
 6. **Clear Data** - Delete all entries when needed
 
 ## Preview
-    ![Screenshot](1.png)
-    ![Screenshot](2.png)
+![Screenshot](1.png)
+![Screenshot](2.png)
     
 ## Color Palette
 
