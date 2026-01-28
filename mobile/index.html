@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>DTR Mobile</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Main App -->
+  <div id="appPage" class="app-page">
+    <div class="app-container">
+      <header class="app-header">
+        <div class="header-content">
+          <h1>Daily Time Record</h1>
+          <p class="header-subtitle">Track your time locally</p>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <div class="content-wrapper">
+          <!-- Entry Form -->
+          <section class="card form-card">
+            <h2 class="section-title">Add Entry</h2>
+            <form id="entryForm" class="entry-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="date">Date</label>
+                  <input type="date" id="date" required>
+                </div>
+                <div class="form-group">
+                  <label for="timeIn">Time In</label>
+                  <input type="time" id="timeIn" required>
+                  <small class="time-display" id="timeInDisplay"></small>
+                </div>
+                <div class="form-group">
+                  <label for="timeOut">Time Out</label>
+                  <input type="time" id="timeOut" required>
+                  <small class="time-display" id="timeOutDisplay"></small>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="duration">Duration</label>
+                  <input type="text" id="duration" readonly>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">✓ Add Entry</button>
+                <button type="reset" class="btn btn-secondary">Reset</button>
+              </div>
+            </form>
+          </section>
+
+        <!-- Statistics -->
+        <section class="card">
+          <h2 class="section-title">Statistics</h2>
+          <div class="stats-grid">
+            <div class="stat">
+              <span class="stat-label">Total Hours</span>
+              <span class="stat-value" id="totalHours">0.0h</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Total Entries</span>
+              <span class="stat-value" id="totalEntries">0</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Average Daily</span>
+              <span class="stat-value" id="avgDaily">0.0h</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Last Update</span>
+              <span class="stat-value" id="lastSync">Now</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Entries List -->
+        <section class="card">
+          <h2 class="section-title">Your Entries</h2>
+          <div id="entriesContainer" class="entries-list">
+            <p class="empty-state">No entries yet. Add your first entry above!</p>
+          </div>
+        </section>
+
+        <!-- Report Section -->
+        <section class="card" id="reportCard" hidden>
+          <h2 class="section-title">📊 Report</h2>
+          <table class="report-table" id="reportTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Time In</th>
+                <th>Time Out</th>
+                <th>Duration</th>
+              </tr>
+            </thead>
+            <tbody id="reportBody"></tbody>
+          </table>
+        </section>
+
+          <!-- Controls -->
+          <section class="card controls-section">
+            <div class="report-actions">
+              <button id="generateBtn" class="btn btn-success">📊 Generate Report</button>
+              <button id="printBtn" class="btn btn-secondary" hidden>🖨️ Print</button>
+              <button id="exportCsvBtn" class="btn btn-secondary">📥 Export CSV</button>
+              <button id="clearBtn" class="btn btn-danger">🗑️ Clear All</button>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Modal Dialogs -->
+  <div id="confirmModal" class="modal" hidden>
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Confirm Action</h2>
+        <button class="modal-close" id="modalCloseBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="modalMessage"></p>
+      </div>
+      <div class="modal-footer">
+        <button id="modalCancelBtn" class="btn btn-secondary">Cancel</button>
+        <button id="modalConfirmBtn" class="btn btn-danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
