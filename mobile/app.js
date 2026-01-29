@@ -5,6 +5,7 @@
 
 // ============ STORAGE KEY ============
 const ENTRIES_STORAGE_KEY = 'dtr_entries_v1';
+const CLOCK_STATE_KEY = 'dtr_clock_state_v1';
 
 // ============ MODAL FUNCTIONS ============
 
@@ -150,6 +151,34 @@ function showToast(message, type = 'success') {
 }
 
 // ============ DATA MANAGEMENT ============
+
+/**
+ * Load clock state
+ */
+function loadClockState() {
+  try {
+    const data = localStorage.getItem(CLOCK_STATE_KEY);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error('Load clock state error:', error);
+    return null;
+  }
+}
+
+/**
+ * Save clock state
+ */
+function saveClockState(state) {
+  try {
+    if (state === null) {
+      localStorage.removeItem(CLOCK_STATE_KEY);
+    } else {
+      localStorage.setItem(CLOCK_STATE_KEY, JSON.stringify(state));
+    }
+  } catch (error) {
+    console.error('Save clock state error:', error);
+  }
+}
 
 /**
  * Load all entries
@@ -443,6 +472,145 @@ function exportCSV() {
   showToast('CSV exported successfully');
 }
 
+// ============ CLOCK IN/OUT FUNCTIONS ============
+
+/**
+ * Update clock UI based on state
+ */
+function updateClockUI() {
+  const state = loadClockState();
+  const clockInBtn = document.getElementById('clockInBtn');
+  const clockOutBtn = document.getElementById('clockOutBtn');
+  const statusText = document.querySelector('.status-text');
+  const clockedInTime = document.getElementById('clockedInTime');
+  
+  if (state && state.clockedIn) {
+    // User is clocked in
+    const clockInDate = new Date(state.timeIn);
+    
+    // Validate the date
+    if (isNaN(clockInDate.getTime())) {
+      // Invalid date - clear corrupted state
+      saveClockState(null);
+      clockInBtn.disabled = false;
+      clockOutBtn.disabled = true;
+      statusText.textContent = 'Ready to clock in';
+      clockedInTime.textContent = '';
+      return;
+    }
+    
+    clockInBtn.disabled = true;
+    clockOutBtn.disabled = false;
+    statusText.textContent = 'Clocked in';
+    
+    const timeStr = clockInDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const dateStr = clockInDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    clockedInTime.textContent = `${dateStr} at ${timeStr}`;
+  } else {
+    // User is not clocked in
+    clockInBtn.disabled = false;
+    clockOutBtn.disabled = true;
+    statusText.textContent = 'Ready to clock in';
+    clockedInTime.textContent = '';
+  }
+}
+
+/**
+ * Handle clock in
+ */
+function clockIn() {
+  try {
+    const now = new Date();
+    // Use local date to avoid timezone issues
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const localDate = `${year}-${month}-${day}`;
+    
+    const state = {
+      clockedIn: true,
+      date: localDate,
+      timeIn: now.toISOString()
+    };
+    
+    saveClockState(state);
+    updateClockUI();
+    showToast('Clocked in successfully');
+  } catch (error) {
+    console.error('Clock in error:', error);
+    showToast('Error clocking in', 'error');
+  }
+}
+
+/**
+ * Handle clock out
+ */
+function clockOut() {
+  try {
+    const state = loadClockState();
+    
+    if (!state || !state.clockedIn) {
+      showToast('You must clock in first', 'error');
+      return;
+    }
+    
+    const now = new Date();
+    const clockInDate = new Date(state.timeIn);
+    
+    // Validate clock in date
+    if (isNaN(clockInDate.getTime())) {
+      showToast('Invalid clock in time. Please clock in again.', 'error');
+      saveClockState(null);
+      updateClockUI();
+      return;
+    }
+    
+    // Format times for entry
+    const date = state.date;
+    const timeIn = clockInDate.toTimeString().slice(0, 5); // HH:MM format
+    const timeOut = now.toTimeString().slice(0, 5); // HH:MM format
+    
+    // Calculate duration
+    const duration = minutesBetween(date, timeIn, timeOut);
+    
+    // Add entry
+    const entries = loadEntries();
+    const id = Date.now().toString();
+    
+    entries.push({
+      id,
+      date,
+      timeIn,
+      timeOut,
+      duration,
+      createdAt: new Date().toISOString()
+    });
+    
+    // Save entries - check for success before clearing clock state
+    try {
+      saveEntries(entries);
+    } catch (saveError) {
+      console.error('Failed to save entry:', saveError);
+      showToast('Failed to save time entry', 'error');
+      return;
+    }
+    
+    // Clear clock state only after successful save
+    saveClockState(null);
+    
+    // Update UI
+    renderEntries();
+    updateStats();
+    updateLastSync();
+    updateClockUI();
+    
+    showToast('Clocked out successfully');
+  } catch (error) {
+    console.error('Clock out error:', error);
+    showToast('Error clocking out', 'error');
+  }
+}
+
 // ============ INITIALIZATION ============
 
 window.addEventListener('load', () => {
@@ -453,6 +621,10 @@ window.addEventListener('load', () => {
   document.getElementById('exportCsvBtn').addEventListener('click', exportCSV);
   document.getElementById('clearBtn').addEventListener('click', clearAll);
   
+  // Initialize clock in/out buttons
+  document.getElementById('clockInBtn').addEventListener('click', clockIn);
+  document.getElementById('clockOutBtn').addEventListener('click', clockOut);
+  
   // Set today's date
   document.getElementById('date').valueAsDate = new Date();
   
@@ -460,5 +632,6 @@ window.addEventListener('load', () => {
   renderEntries();
   updateStats();
   updateLastSync();
+  updateClockUI();
   setupDurationCalculation();
 });
