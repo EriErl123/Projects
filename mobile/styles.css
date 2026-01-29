@@ -614,27 +614,12 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   transition: all 0.2s ease;
-}
-
-.btn-clock-in {
   background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
   color: #ffffff;
   border: 3px solid #000000;
 }
 
-.btn-clock-in:hover:not(:disabled) {
-  background: linear-gradient(135deg, #1a1a1a 0%, #333333 100%);
-  transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
-}
-
-.btn-clock-out {
-  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
-  color: #ffffff;
-  border: 3px solid #000000;
-}
-
-.btn-clock-out:hover:not(:disabled) {
+.btn-clock:hover:not(:disabled) {
   background: linear-gradient(135deg, #1a1a1a 0%, #333333 100%);
   transform: translateY(-3px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);

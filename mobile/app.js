@@ -486,11 +486,23 @@ function updateClockUI() {
   
   if (state && state.clockedIn) {
     // User is clocked in
+    const clockInDate = new Date(state.timeIn);
+    
+    // Validate the date
+    if (isNaN(clockInDate.getTime())) {
+      // Invalid date - clear corrupted state
+      saveClockState(null);
+      clockInBtn.disabled = false;
+      clockOutBtn.disabled = true;
+      statusText.textContent = 'Ready to clock in';
+      clockedInTime.textContent = '';
+      return;
+    }
+    
     clockInBtn.disabled = true;
     clockOutBtn.disabled = false;
     statusText.textContent = 'Clocked in';
     
-    const clockInDate = new Date(state.timeIn);
     const timeStr = clockInDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
     const dateStr = clockInDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     clockedInTime.textContent = `${dateStr} at ${timeStr}`;
@@ -509,9 +521,15 @@ function updateClockUI() {
 function clockIn() {
   try {
     const now = new Date();
+    // Use local date to avoid timezone issues
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const localDate = `${year}-${month}-${day}`;
+    
     const state = {
       clockedIn: true,
-      date: now.toISOString().split('T')[0],
+      date: localDate,
       timeIn: now.toISOString()
     };
     
@@ -539,6 +557,14 @@ function clockOut() {
     const now = new Date();
     const clockInDate = new Date(state.timeIn);
     
+    // Validate clock in date
+    if (isNaN(clockInDate.getTime())) {
+      showToast('Invalid clock in time. Please clock in again.', 'error');
+      saveClockState(null);
+      updateClockUI();
+      return;
+    }
+    
     // Format times for entry
     const date = state.date;
     const timeIn = clockInDate.toTimeString().slice(0, 5); // HH:MM format
@@ -560,9 +586,16 @@ function clockOut() {
       createdAt: new Date().toISOString()
     });
     
-    saveEntries(entries);
+    // Save entries - check for success before clearing clock state
+    try {
+      saveEntries(entries);
+    } catch (saveError) {
+      console.error('Failed to save entry:', saveError);
+      showToast('Failed to save time entry', 'error');
+      return;
+    }
     
-    // Clear clock state
+    // Clear clock state only after successful save
     saveClockState(null);
     
     // Update UI
