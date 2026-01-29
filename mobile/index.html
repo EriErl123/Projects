@@ -20,6 +20,23 @@
 
       <main class="main-content">
         <div class="content-wrapper">
+          <!-- Clock In/Out Section (Mobile) -->
+          <section class="card clock-card">
+            <h2 class="section-title">Quick Time Entry</h2>
+            <div id="clockStatus" class="clock-status">
+              <p class="status-text">Ready to clock in</p>
+              <p class="clock-time" id="clockedInTime"></p>
+            </div>
+            <div class="clock-actions">
+              <button type="button" id="clockInBtn" class="btn btn-clock btn-clock-in">
+                🕐 Clock In
+              </button>
+              <button type="button" id="clockOutBtn" class="btn btn-clock btn-clock-out" disabled>
+                🕐 Clock Out
+              </button>
+            </div>
+          </section>
+
           <!-- Entry Form -->
           <section class="card form-card">
             <h2 class="section-title">Add Entry</h2>
