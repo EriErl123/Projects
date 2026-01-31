@@ -303,7 +303,7 @@ function clearAll() {
 // ============ UI RENDERING ============
 
 /**
- * Render all entries
+ * Render all entries with table layout
  */
 function renderEntries() {
   const entries = loadEntries();
@@ -314,33 +314,71 @@ function renderEntries() {
     return;
   }
   
-  container.innerHTML = entries
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .map(entry => {
-      const date = new Date(entry.date + 'T00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-      const timeInDisplay = format12HourTime(entry.timeIn);
-      const timeOutDisplay = format12HourTime(entry.timeOut);
-      const durationDisplay = formatDuration(entry.duration);
-      
-      return `
-        <div class="entry">
-          <div class="entry-date">${date}</div>
-          <div class="entry-times">
-            <div class="entry-time">
-              <span class="entry-label">In:</span>
-              <span>${timeInDisplay}</span>
-            </div>
-            <div class="entry-time">
-              <span class="entry-label">Out:</span>
-              <span>${timeOutDisplay}</span>
-            </div>
-          </div>
-          <div class="entry-duration">${durationDisplay}</div>
-          <button class="btn btn-sm btn-danger" onclick="deleteEntry('${entry.id}')">🗑️ Delete</button>
+  // Group entries by date
+  const groupedEntries = {};
+  entries.forEach(entry => {
+    if (!groupedEntries[entry.date]) {
+      groupedEntries[entry.date] = [];
+    }
+    groupedEntries[entry.date].push(entry);
+  });
+  
+  // Sort dates (newest first)
+  const sortedDates = Object.keys(groupedEntries).sort((a, b) => new Date(b) - new Date(a));
+  
+  container.innerHTML = sortedDates.map(date => {
+    const dateEntries = groupedEntries[date];
+    const dateFormatted = new Date(date + 'T00:00').toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric'
+    });
+    
+    const totalDayMinutes = dateEntries.reduce((sum, e) => sum + e.duration, 0);
+    const totalDayDisplay = formatDuration(totalDayMinutes);
+    
+    return `
+      <div class="entry-group">
+        <div class="entry-group-header">
+          <span class="entry-group-date">${dateFormatted}</span>
+          <span class="entry-group-total">Total: ${totalDayDisplay}</span>
         </div>
-      `;
-    })
-    .join('');
+        <div class="entry-table">
+          <div class="entry-table-header">
+            <div class="entry-table-cell">Time In</div>
+            <div class="entry-table-cell">Time Out</div>
+            <div class="entry-table-cell">Duration</div>
+            <div class="entry-table-cell">Action</div>
+          </div>
+          ${dateEntries.map((entry, index) => {
+            const timeInDisplay = format12HourTime(entry.timeIn);
+            const timeOutDisplay = format12HourTime(entry.timeOut);
+            const durationDisplay = formatDuration(entry.duration);
+            const period = index === 0 ? 'Morning' : index === 1 ? 'Afternoon' : `Period ${index + 1}`;
+            
+            return `
+              <div class="entry-table-row">
+                <div class="entry-table-cell" data-label="Time In">
+                  <span class="entry-period">${period}</span>
+                  <span class="time-value">${timeInDisplay}</span>
+                </div>
+                <div class="entry-table-cell" data-label="Time Out">
+                  <span class="time-value">${timeOutDisplay}</span>
+                </div>
+                <div class="entry-table-cell" data-label="Duration">
+                  <span class="duration-value">${durationDisplay}</span>
+                </div>
+                <div class="entry-table-cell" data-label="Action">
+                  <button class="btn btn-sm btn-danger" onclick="deleteEntry('${entry.id}')" title="Delete">🗑️</button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 /**
@@ -470,6 +508,196 @@ function exportCSV() {
   window.URL.revokeObjectURL(url);
   
   showToast('CSV exported successfully');
+}
+
+/**
+ * Import from CSV
+ */
+function importCSV() {
+  const fileInput = document.getElementById('csvFileInput');
+  fileInput.click();
+}
+
+/**
+ * Parse and import CSV file
+ */
+function parseCSVFile(file) {
+  const reader = new FileReader();
+  
+  reader.onload = (e) => {
+    try {
+      const content = e.target.result;
+      const lines = content.split('\n').filter(line => line.trim());
+      
+      if (lines.length < 2) {
+        showToast('CSV file is empty or invalid', 'error');
+        return;
+      }
+      
+      // Skip header line
+      const dataLines = lines.slice(1);
+      const importedEntries = [];
+      const errors = [];
+      
+      dataLines.forEach((line, index) => {
+        try {
+          // Parse CSV line (handle quoted values)
+          const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+          const cleanValues = values.map(v => v.replace(/^"|"$/g, '').trim());
+          
+          if (cleanValues.length < 3) {
+            errors.push(`Line ${index + 2}: Insufficient data`);
+            return;
+          }
+          
+          const [dateStr, timeInStr, timeOutStr] = cleanValues;
+          
+          // Parse date (support multiple formats)
+          const date = parseImportDate(dateStr);
+          if (!date) {
+            errors.push(`Line ${index + 2}: Invalid date format "${dateStr}"`);
+            return;
+          }
+          
+          // Parse times (support 12-hour and 24-hour formats)
+          const timeIn = parseImportTime(timeInStr);
+          const timeOut = parseImportTime(timeOutStr);
+          
+          if (!timeIn || !timeOut) {
+            errors.push(`Line ${index + 2}: Invalid time format`);
+            return;
+          }
+          
+          const duration = minutesBetween(date, timeIn, timeOut);
+          
+          if (duration <= 0) {
+            errors.push(`Line ${index + 2}: Invalid duration (time out must be after time in)`);
+            return;
+          }
+          
+          importedEntries.push({
+            id: `${Date.now()}_${index}`,
+            date,
+            timeIn,
+            timeOut,
+            duration,
+            createdAt: new Date().toISOString()
+          });
+        } catch (err) {
+          errors.push(`Line ${index + 2}: ${err.message}`);
+        }
+      });
+      
+      if (importedEntries.length === 0) {
+        showToast('No valid entries found in CSV', 'error');
+        if (errors.length > 0) {
+          console.error('Import errors:', errors);
+        }
+        return;
+      }
+      
+      // Show confirmation modal
+      showModal(
+        'Import CSV Data',
+        `Found ${importedEntries.length} valid entries.${errors.length > 0 ? ` ${errors.length} entries had errors and were skipped.` : ''} Do you want to import these entries?`,
+        () => {
+          const currentEntries = loadEntries();
+          const mergedEntries = [...currentEntries, ...importedEntries];
+          saveEntries(mergedEntries);
+          renderEntries();
+          updateStats();
+          updateLastSync();
+          showToast(`Successfully imported ${importedEntries.length} entries`);
+        },
+        { confirmText: 'Import', cancelText: 'Cancel', isDangerous: false }
+      );
+      
+    } catch (error) {
+      console.error('CSV import error:', error);
+      showToast('Error reading CSV file', 'error');
+    }
+  };
+  
+  reader.onerror = () => {
+    showToast('Error reading file', 'error');
+  };
+  
+  reader.readAsText(file);
+}
+
+/**
+ * Parse date from CSV (supports multiple formats)
+ */
+function parseImportDate(dateStr) {
+  // Try parsing different date formats
+  let date = null;
+  
+  // Format: MM/DD/YYYY or M/D/YYYY
+  const usFormat = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (usFormat) {
+    const [, month, day, year] = usFormat;
+    date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+  
+  // Format: YYYY-MM-DD
+  const isoFormat = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoFormat) {
+    date = dateStr;
+  }
+  
+  // Format: DD/MM/YYYY or D/M/YYYY
+  const euroFormat = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (euroFormat && !usFormat) {
+    const [, day, month, year] = euroFormat;
+    // Assume European format if day > 12
+    if (parseInt(day) > 12) {
+      date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+  }
+  
+  // Validate date
+  if (date && !isNaN(new Date(date).getTime())) {
+    return date;
+  }
+  
+  return null;
+}
+
+/**
+ * Parse time from CSV (supports 12-hour and 24-hour formats)
+ */
+function parseImportTime(timeStr) {
+  timeStr = timeStr.trim();
+  
+  // Format: HH:MM AM/PM or H:MM AM/PM
+  const time12 = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (time12) {
+    let [, hour, minute, period] = time12;
+    hour = parseInt(hour);
+    minute = parseInt(minute);
+    
+    if (period.toUpperCase() === 'PM' && hour !== 12) {
+      hour += 12;
+    } else if (period.toUpperCase() === 'AM' && hour === 12) {
+      hour = 0;
+    }
+    
+    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  }
+  
+  // Format: HH:MM (24-hour)
+  const time24 = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+  if (time24) {
+    const [, hour, minute] = time24;
+    const h = parseInt(hour);
+    const m = parseInt(minute);
+    
+    if (h >= 0 && h < 24 && m >= 0 && m < 60) {
+      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    }
+  }
+  
+  return null;
 }
 
 // ============ CLOCK IN/OUT FUNCTIONS ============
@@ -619,11 +847,22 @@ window.addEventListener('load', () => {
   document.getElementById('generateBtn').addEventListener('click', generateReport);
   document.getElementById('printBtn').addEventListener('click', printReport);
   document.getElementById('exportCsvBtn').addEventListener('click', exportCSV);
+  document.getElementById('importCsvBtn').addEventListener('click', importCSV);
   document.getElementById('clearBtn').addEventListener('click', clearAll);
   
   // Initialize clock in/out buttons
   document.getElementById('clockInBtn').addEventListener('click', clockIn);
   document.getElementById('clockOutBtn').addEventListener('click', clockOut);
+  
+  // Initialize CSV file input handler
+  document.getElementById('csvFileInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      parseCSVFile(file);
+      // Reset file input
+      e.target.value = '';
+    }
+  });
   
   // Set today's date
   document.getElementById('date').valueAsDate = new Date();
