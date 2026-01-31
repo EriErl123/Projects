@@ -11,6 +11,10 @@ const CLOCK_STATE_KEY = 'dtr_clock_state_v1';
 let currentPage = 1;
 const DATES_PER_PAGE = 5; // Number of date groups to show per page
 
+// Cache for pagination calculations
+let cachedTotalPages = 1;
+let cachedTotalDates = 0;
+
 // ============ MODAL FUNCTIONS ============
 
 /**
@@ -404,6 +408,10 @@ function renderEntries() {
     `;
   }).join('');
   
+  // Cache pagination values
+  cachedTotalPages = totalPages;
+  cachedTotalDates = sortedDates.length;
+  
   // Render pagination controls
   renderPaginationControls(totalPages, sortedDates.length);
 }
@@ -517,16 +525,8 @@ function renderPaginationControls(totalPages, totalDates) {
  * Go to specific page
  */
 function goToPage(page) {
-  const entries = loadEntries();
-  const groupedEntries = {};
-  entries.forEach(entry => {
-    if (!groupedEntries[entry.date]) {
-      groupedEntries[entry.date] = [];
-    }
-    groupedEntries[entry.date].push(entry);
-  });
-  const totalDates = Object.keys(groupedEntries).length;
-  const totalPages = Math.ceil(totalDates / DATES_PER_PAGE);
+  // Use cached values if available
+  const totalPages = cachedTotalPages;
   
   if (page < 1 || page > totalPages) return;
   
