@@ -355,7 +355,19 @@ function renderEntries() {
             const timeInDisplay = format12HourTime(entry.timeIn);
             const timeOutDisplay = format12HourTime(entry.timeOut);
             const durationDisplay = formatDuration(entry.duration);
-            const period = index === 0 ? 'Morning' : index === 1 ? 'Afternoon' : `Period ${index + 1}`;
+            
+            // Determine period based on actual time
+            const [hours] = entry.timeIn.split(':').map(Number);
+            let period;
+            if (hours >= 5 && hours < 12) {
+              period = 'Morning';
+            } else if (hours >= 12 && hours < 17) {
+              period = 'Afternoon';
+            } else if (hours >= 17 && hours < 21) {
+              period = 'Evening';
+            } else {
+              period = 'Night';
+            }
             
             return `
               <div class="entry-table-row">
@@ -575,8 +587,11 @@ function parseCSVFile(file) {
             return;
           }
           
+          // Generate unique ID using timestamp and random component
+          const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          
           importedEntries.push({
-            id: `${Date.now()}_${index}`,
+            id: uniqueId,
             date,
             timeIn,
             timeOut,
