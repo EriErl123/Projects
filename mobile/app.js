@@ -7,6 +7,10 @@
 const ENTRIES_STORAGE_KEY = 'dtr_entries_v1';
 const CLOCK_STATE_KEY = 'dtr_clock_state_v1';
 
+// ============ PAGINATION STATE ============
+let currentPage = 1;
+const DATES_PER_PAGE = 5; // Number of date groups to show per page
+
 // ============ MODAL FUNCTIONS ============
 
 /**
@@ -303,7 +307,7 @@ function clearAll() {
 // ============ UI RENDERING ============
 
 /**
- * Render all entries with table layout
+ * Render all entries with table layout and pagination
  */
 function renderEntries() {
   const entries = loadEntries();
@@ -311,6 +315,7 @@ function renderEntries() {
   
   if (entries.length === 0) {
     container.innerHTML = '<p class="empty-state">No entries yet. Add your first entry above!</p>';
+    document.getElementById('paginationControls').style.display = 'none';
     return;
   }
   
@@ -326,7 +331,14 @@ function renderEntries() {
   // Sort dates (newest first)
   const sortedDates = Object.keys(groupedEntries).sort((a, b) => new Date(b) - new Date(a));
   
-  container.innerHTML = sortedDates.map(date => {
+  // Calculate pagination
+  const totalPages = Math.ceil(sortedDates.length / DATES_PER_PAGE);
+  const startIndex = (currentPage - 1) * DATES_PER_PAGE;
+  const endIndex = startIndex + DATES_PER_PAGE;
+  const datesToShow = sortedDates.slice(startIndex, endIndex);
+  
+  // Render entries for current page
+  container.innerHTML = datesToShow.map(date => {
     const dateEntries = groupedEntries[date];
     const dateFormatted = new Date(date + 'T00:00').toLocaleDateString('en-US', { 
       weekday: 'long', 
@@ -391,6 +403,152 @@ function renderEntries() {
       </div>
     `;
   }).join('');
+  
+  // Render pagination controls
+  renderPaginationControls(totalPages, sortedDates.length);
+}
+
+/**
+ * Render pagination controls
+ */
+function renderPaginationControls(totalPages, totalDates) {
+  const paginationContainer = document.getElementById('paginationControls');
+  
+  if (totalPages <= 1) {
+    paginationContainer.style.display = 'none';
+    return;
+  }
+  
+  paginationContainer.style.display = 'flex';
+  
+  const startDate = (currentPage - 1) * DATES_PER_PAGE + 1;
+  const endDate = Math.min(currentPage * DATES_PER_PAGE, totalDates);
+  
+  let paginationHTML = `
+    <div class="pagination-info">
+      Showing ${startDate}-${endDate} of ${totalDates} dates
+    </div>
+    <div class="pagination-buttons">
+      <button 
+        class="btn btn-sm btn-secondary pagination-btn" 
+        onclick="goToPage(1)" 
+        ${currentPage === 1 ? 'disabled' : ''}
+        title="First Page"
+      >
+        ⏮️
+      </button>
+      <button 
+        class="btn btn-sm btn-secondary pagination-btn" 
+        onclick="previousPage()" 
+        ${currentPage === 1 ? 'disabled' : ''}
+        title="Previous Page"
+      >
+        ◀️ Prev
+      </button>
+  `;
+  
+  // Generate page numbers
+  const maxPagesToShow = 5;
+  let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+  let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+  
+  // Adjust start if we're near the end
+  if (endPage - startPage < maxPagesToShow - 1) {
+    startPage = Math.max(1, endPage - maxPagesToShow + 1);
+  }
+  
+  // Show first page and ellipsis if needed
+  if (startPage > 1) {
+    paginationHTML += `
+      <button class="btn btn-sm btn-secondary pagination-btn page-number" onclick="goToPage(1)">1</button>
+    `;
+    if (startPage > 2) {
+      paginationHTML += `<span class="pagination-ellipsis">...</span>`;
+    }
+  }
+  
+  // Show page numbers
+  for (let i = startPage; i <= endPage; i++) {
+    paginationHTML += `
+      <button 
+        class="btn btn-sm ${i === currentPage ? 'btn-primary' : 'btn-secondary'} pagination-btn page-number" 
+        onclick="goToPage(${i})"
+        ${i === currentPage ? 'disabled' : ''}
+      >
+        ${i}
+      </button>
+    `;
+  }
+  
+  // Show last page and ellipsis if needed
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) {
+      paginationHTML += `<span class="pagination-ellipsis">...</span>`;
+    }
+    paginationHTML += `
+      <button class="btn btn-sm btn-secondary pagination-btn page-number" onclick="goToPage(${totalPages})">${totalPages}</button>
+    `;
+  }
+  
+  paginationHTML += `
+      <button 
+        class="btn btn-sm btn-secondary pagination-btn" 
+        onclick="nextPage()" 
+        ${currentPage === totalPages ? 'disabled' : ''}
+        title="Next Page"
+      >
+        Next ▶️
+      </button>
+      <button 
+        class="btn btn-sm btn-secondary pagination-btn" 
+        onclick="goToPage(${totalPages})" 
+        ${currentPage === totalPages ? 'disabled' : ''}
+        title="Last Page"
+      >
+        ⏭️
+      </button>
+    </div>
+  `;
+  
+  paginationContainer.innerHTML = paginationHTML;
+}
+
+/**
+ * Go to specific page
+ */
+function goToPage(page) {
+  const entries = loadEntries();
+  const groupedEntries = {};
+  entries.forEach(entry => {
+    if (!groupedEntries[entry.date]) {
+      groupedEntries[entry.date] = [];
+    }
+    groupedEntries[entry.date].push(entry);
+  });
+  const totalDates = Object.keys(groupedEntries).length;
+  const totalPages = Math.ceil(totalDates / DATES_PER_PAGE);
+  
+  if (page < 1 || page > totalPages) return;
+  
+  currentPage = page;
+  renderEntries();
+  
+  // Scroll to entries section
+  document.getElementById('entriesContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/**
+ * Go to next page
+ */
+function nextPage() {
+  goToPage(currentPage + 1);
+}
+
+/**
+ * Go to previous page
+ */
+function previousPage() {
+  goToPage(currentPage - 1);
 }
 
 /**

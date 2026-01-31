@@ -911,6 +911,7 @@ body {
 .entries-list {
   display: grid;
   gap: 16px;
+  margin-bottom: 20px;
 }
 
 .empty-state {
@@ -922,6 +923,73 @@ body {
   background: linear-gradient(135deg, #f9f9f9 0%, #f5f5f5 100%);
   border: 2px dashed #cccccc;
   border-radius: var(--radius-sm);
+}
+
+/* Pagination Controls */
+.pagination-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 0 0 0;
+  border-top: 2px solid #e0e0e0;
+  margin-top: 20px;
+}
+
+.pagination-info {
+  text-align: center;
+  font-size: 13px;
+  color: #666666;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pagination-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pagination-btn {
+  min-width: 40px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 2px solid #000000;
+  transition: all 0.2s ease;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: #e0e0e0;
+  border-color: #cccccc;
+  color: #999999;
+}
+
+.pagination-btn:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.pagination-btn.page-number {
+  min-width: 36px;
+  padding: 8px 10px;
+}
+
+.pagination-btn.btn-primary {
+  background: #000000;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.pagination-ellipsis {
+  padding: 0 6px;
+  color: #666666;
+  font-weight: 700;
+  font-size: 16px;
 }
 
 .entry-group {
@@ -1421,6 +1489,37 @@ body {
     position: relative;
   }
 
+  /* Pagination Mobile */
+  .pagination-controls {
+    gap: 10px;
+    padding: 12px 0 0 0;
+    margin-top: 16px;
+  }
+
+  .pagination-info {
+    font-size: 11px;
+  }
+
+  .pagination-buttons {
+    gap: 4px;
+  }
+
+  .pagination-btn {
+    min-width: 32px;
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  .pagination-btn.page-number {
+    min-width: 30px;
+    padding: 6px 8px;
+  }
+
+  .pagination-ellipsis {
+    padding: 0 4px;
+    font-size: 14px;
+  }
+
   /* Admin Dashboard Mobile */
   .admin-header {
     flex-direction: column;
@@ -1653,6 +1752,38 @@ body {
   .btn-clock {
     padding: 12px;
     font-size: 13px;
+  }
+
+  /* Pagination Extra Small Mobile */
+  .pagination-controls {
+    gap: 8px;
+    padding: 10px 0 0 0;
+    margin-top: 12px;
+  }
+
+  .pagination-info {
+    font-size: 10px;
+  }
+
+  .pagination-buttons {
+    gap: 3px;
+  }
+
+  .pagination-btn {
+    min-width: 28px;
+    padding: 5px 6px;
+    font-size: 10px;
+    border-width: 1.5px;
+  }
+
+  .pagination-btn.page-number {
+    min-width: 26px;
+    padding: 5px 6px;
+  }
+
+  .pagination-ellipsis {
+    padding: 0 3px;
+    font-size: 12px;
   }
 
   .modal-content {
