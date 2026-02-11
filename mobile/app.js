@@ -620,15 +620,88 @@ function importCSV() {
 }
 
 /**
- * Parse and import CSV file
+ * Parse and import CSV or Excel file
  */
 function parseCSVFile(file) {
+  const fileName = file.name.toLowerCase();
+  const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+  
+  if (isExcel) {
+    parseExcelFile(file);
+  } else {
+    parseCSVFileContent(file);
+  }
+}
+
+/**
+ * Parse Excel file using SheetJS
+ */
+function parseExcelFile(file) {
+  const reader = new FileReader();
+  
+  reader.onload = (e) => {
+    try {
+      // Check if XLSX library is available
+      if (typeof XLSX === 'undefined') {
+        showToast('Excel support not available. Please use CSV format.', 'error');
+        return;
+      }
+      
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      
+      // Get first sheet
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      
+      // Convert to CSV format
+      const csv = XLSX.utils.sheet_to_csv(worksheet);
+      
+      // Parse the CSV content
+      parseCSVContent(csv);
+      
+    } catch (error) {
+      console.error('Excel import error:', error);
+      showToast('Error reading Excel file. Try saving as CSV first.', 'error');
+    }
+  };
+  
+  reader.onerror = () => {
+    showToast('Error reading file', 'error');
+  };
+  
+  reader.readAsArrayBuffer(file);
+}
+
+/**
+ * Parse CSV file
+ */
+function parseCSVFileContent(file) {
   const reader = new FileReader();
   
   reader.onload = (e) => {
     try {
       const content = e.target.result;
-      const lines = content.split('\n').filter(line => line.trim());
+      parseCSVContent(content);
+    } catch (error) {
+      console.error('CSV import error:', error);
+      showToast('Error reading CSV file', 'error');
+    }
+  };
+  
+  reader.onerror = () => {
+    showToast('Error reading file', 'error');
+  };
+  
+  reader.readAsText(file);
+}
+
+/**
+ * Parse CSV content string
+ */
+function parseCSVContent(content) {
+  try {
+    const lines = content.split('\n').filter(line => line.trim());
       
       if (lines.length < 2) {
         showToast('CSV file is empty or invalid', 'error');
@@ -702,7 +775,7 @@ function parseCSVFile(file) {
       
       // Show confirmation modal
       showModal(
-        'Import CSV Data',
+        'Import Data',
         `Found ${importedEntries.length} valid entries.${errors.length > 0 ? ` ${errors.length} entries had errors and were skipped.` : ''} Do you want to import these entries?`,
         () => {
           const currentEntries = loadEntries();
@@ -716,17 +789,10 @@ function parseCSVFile(file) {
         { confirmText: 'Import', cancelText: 'Cancel', isDangerous: false }
       );
       
-    } catch (error) {
-      console.error('CSV import error:', error);
-      showToast('Error reading CSV file', 'error');
-    }
-  };
-  
-  reader.onerror = () => {
-    showToast('Error reading file', 'error');
-  };
-  
-  reader.readAsText(file);
+  } catch (error) {
+    console.error('CSV parse error:', error);
+    showToast('Error parsing CSV content', 'error');
+  }
 }
 
 /**

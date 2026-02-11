@@ -6,6 +6,8 @@
   <title>DTR Mobile</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="styles.css">
+  <!-- SheetJS library for Excel file support -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <!-- Main App -->
@@ -91,10 +93,10 @@
               <button id="generateBtn" class="btn btn-success">📊 Generate Report</button>
               <button id="printBtn" class="btn btn-secondary" hidden>🖨️ Print</button>
               <button id="exportCsvBtn" class="btn btn-secondary">📥 Export CSV</button>
-              <button id="importCsvBtn" class="btn btn-secondary">📤 Import CSV</button>
+              <button id="importCsvBtn" class="btn btn-secondary">📤 Import CSV/Excel</button>
               <button id="clearBtn" class="btn btn-danger">🗑️ Clear All</button>
             </div>
-            <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
+            <input type="file" id="csvFileInput" accept=".csv,.xlsx,.xls" style="display: none;">
           </section>
         </div>
       </main>

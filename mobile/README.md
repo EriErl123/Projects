@@ -11,6 +11,7 @@ A professional HTML+JS mobile-friendly Daily Time Record (DTR) app that stores e
 ✅ **Professional Design** - Modern UI with custom color palette  
 ✅ **Generate Reports** - Create and view DTR reports  
 ✅ **Print & Export** - Print to PDF or export as CSV  
+✅ **Import Data** - Import from CSV or Excel files (.csv, .xlsx, .xls)  
 ✅ **Local Storage** - Data stored privately on your device  
 
 ## How to Use
@@ -20,7 +21,8 @@ A professional HTML+JS mobile-friendly Daily Time Record (DTR) app that stores e
 3. **View Stats** - See your tracking stats at a glance
 4. **Generate Report** - Click "Generate Report" to create a summary
 5. **Print/Export** - Print to PDF or export as CSV file
-6. **Clear Data** - Delete all entries when needed
+6. **Import Data** - Import time entries from CSV or Excel files
+7. **Clear Data** - Delete all entries when needed
 
 ## Preview
 ![Screenshot](images/1.png)
@@ -46,6 +48,27 @@ A professional HTML+JS mobile-friendly Daily Time Record (DTR) app that stores e
 - `app.js` - Core logic and functionality
 - `styles.css` - Professional styling
 - `manifest.json` - PWA support
+
+## Import Data Format
+
+The app supports importing time entries from:
+- **CSV files** (.csv)
+- **Excel files** (.xlsx, .xls)
+
+### Expected Format
+Your file should have the following columns:
+```
+Date, Time In, Time Out, Duration (hours)
+1/15/2024, 9:00 AM, 5:00 PM, 8.0
+```
+
+**Supported Date Formats:**
+- MM/DD/YYYY (e.g., 1/15/2024)
+- YYYY-MM-DD (e.g., 2024-01-15)
+
+**Supported Time Formats:**
+- 12-hour with AM/PM (e.g., 9:00 AM)
+- 24-hour format (e.g., 09:00)
 
 ---
 
