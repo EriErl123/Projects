@@ -70,6 +70,8 @@ Date, Time In, Time Out, Duration (hours)
 - 12-hour with AM/PM (e.g., 9:00 AM)
 - 24-hour format (e.g., 09:00)
 
+See `sample_import.csv` for a complete example file.
+
 ---
 
 **Personal use only** • Data never leaves your device
