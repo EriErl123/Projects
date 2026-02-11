@@ -213,47 +213,7 @@ function saveEntries(entries) {
   }
 }
 
-/**
- * Add new entry
- */
-function addEntry(e) {
-  e.preventDefault();
-  
-  try {
-    const date = document.getElementById('date').value;
-    const timeIn = document.getElementById('timeIn').value;
-    const timeOut = document.getElementById('timeOut').value;
-    
-    if (!date || !timeIn || !timeOut) {
-      showToast('Please fill in all fields', 'error');
-      return;
-    }
-    
-    const entries = loadEntries();
-    const id = Date.now().toString();
-    const duration = minutesBetween(date, timeIn, timeOut);
-    
-    entries.push({
-      id,
-      date,
-      timeIn,
-      timeOut,
-      duration,
-      createdAt: new Date().toISOString()
-    });
-    
-    saveEntries(entries);
-    renderEntries();
-    updateStats();
-    updateLastSync();
-    document.getElementById('entryForm').reset();
-    document.getElementById('date').valueAsDate = new Date();
-    showToast('Entry added successfully');
-  } catch (error) {
-    console.error('Add entry error:', error);
-    showToast('Error adding entry', 'error');
-  }
-}
+
 
 /**
  * Delete entry with modal confirmation
@@ -574,36 +534,7 @@ function updateLastSync() {
   document.getElementById('lastSync').textContent = timeStr;
 }
 
-/**
- * Setup time display updates
- */
-function setupDurationCalculation() {
-  const timeInInput = document.getElementById('timeIn');
-  const timeOutInput = document.getElementById('timeOut');
-  const dateInput = document.getElementById('date');
-  const durationInput = document.getElementById('duration');
-  
-  const updateDisplay = () => {
-    const timeIn = timeInInput.value;
-    const timeOut = timeOutInput.value;
-    const date = dateInput.value;
-    
-    if (timeIn && timeOut && date) {
-      const minutes = minutesBetween(date, timeIn, timeOut);
-      durationInput.value = formatDuration(minutes);
-    } else {
-      durationInput.value = '';
-    }
-    
-    // Update time displays
-    document.getElementById('timeInDisplay').textContent = format12HourTime(timeIn);
-    document.getElementById('timeOutDisplay').textContent = format12HourTime(timeOut);
-  };
-  
-  timeInInput.addEventListener('change', updateDisplay);
-  timeOutInput.addEventListener('change', updateDisplay);
-  dateInput.addEventListener('change', updateDisplay);
-}
+
 
 // ============ REPORT FUNCTIONS ============
 
@@ -1015,8 +946,7 @@ function clockOut() {
 // ============ INITIALIZATION ============
 
 window.addEventListener('load', () => {
-  // Initialize form
-  document.getElementById('entryForm').addEventListener('submit', addEntry);
+  // Initialize buttons
   document.getElementById('generateBtn').addEventListener('click', generateReport);
   document.getElementById('printBtn').addEventListener('click', printReport);
   document.getElementById('exportCsvBtn').addEventListener('click', exportCSV);
@@ -1037,13 +967,9 @@ window.addEventListener('load', () => {
     }
   });
   
-  // Set today's date
-  document.getElementById('date').valueAsDate = new Date();
-  
   // Initial render
   renderEntries();
   updateStats();
   updateLastSync();
   updateClockUI();
-  setupDurationCalculation();
 });
