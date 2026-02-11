@@ -624,7 +624,13 @@ function importCSV() {
  */
 function parseCSVFile(file) {
   const fileName = file.name.toLowerCase();
-  const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+  const fileType = file.type;
+  
+  // Check file type by MIME type first, then fall back to extension
+  const isExcelByMime = fileType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
+                        fileType === 'application/vnd.ms-excel';
+  const isExcelByExtension = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+  const isExcel = isExcelByMime || isExcelByExtension;
   
   if (isExcel) {
     parseExcelFile(file);
@@ -643,7 +649,7 @@ function parseExcelFile(file) {
     try {
       // Check if XLSX library is available
       if (typeof XLSX === 'undefined') {
-        showToast('Excel support not available. Please use CSV format.', 'error');
+        showToast('Excel support failed to load. Please check your internet connection or use CSV format instead.', 'error');
         return;
       }
       
